@@ -1,4 +1,4 @@
-import { ApiError } from '../exceptions/apiError'
+import { ApiError } from '../exceptions/api-error'
 import { HttpStatusCode } from '../types'
 
 const whitelist = ['http://localhost:5173']
@@ -13,7 +13,6 @@ export const corsOptions = (
 		callback(
 			new ApiError(
 				`CORS error. Origin: ${origin} not allowed`,
-				false,
 				HttpStatusCode.BAD_REQUEST
 			)
 		)

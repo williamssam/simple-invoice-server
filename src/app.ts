@@ -1,11 +1,12 @@
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express from 'express'
+import mongoose from 'mongoose'
 import { config } from './config'
-import errorHandler from './middlewares/errorHandler'
+import errorHandler from './middlewares/error-handler'
 import routes from './routes'
-import { connectToDB } from './utils/connectToDB'
-import { corsOptions } from './utils/corsOptions'
+import { connectToDB } from './utils/connect-db'
+import { corsOptions } from './utils/cors-options'
 
 const app = express()
 
@@ -21,6 +22,19 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use(routes())
 app.use(errorHandler)
+
+
+// mongoose default to remove both "_id" and version number from response
+mongoose.set('toJSON', {
+	virtuals: true,
+	transform: (doc, converted) => {
+		converted.id = converted._id.toHexString()
+		// biome-ignore lint/performance/noDelete: <explanation>
+		delete converted._id
+		// biome-ignore lint/performance/noDelete: <explanation>
+		delete converted.__v
+	},
+})
 
 // <-- SERVER STARTs -->
 app.listen(config.port, async () => {
