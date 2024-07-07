@@ -25,6 +25,7 @@ const errorHandler = (
 			return res.status(HttpStatusCode.INTERNAL_SERVER).json({
 				message: 'Internal Server error. Something went wrong',
 				success: false,
+				...(IS_DEV && { stack: err.stack }),
 			})
 		}
 

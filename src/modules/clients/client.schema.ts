@@ -18,6 +18,8 @@ const payload = {
 			.string({
 				required_error: 'Client phone is required',
 			})
+			.min(11, 'Phone number should be 11 digits long')
+			.max(11, 'Phone number should not be 11 digits long')
 			.trim(),
 		address: z
 			.string({

@@ -50,7 +50,7 @@ export default (router: Router) => {
 	 * @description Get one client endpoint
 	 * @param {string} id
 	 */
-	router.delete(
+	router.get(
 		`${config.api_url_prefix}/client/:id`,
 		[validateResource(getClientSchema)],
 		getClientHandler
@@ -59,7 +59,7 @@ export default (router: Router) => {
 	/**
 	 * @description Get all clients endpoint
 	 */
-	router.delete(
+	router.get(
 		`${config.api_url_prefix}/clients`,
 		[validateResource(getAllClientsSchema)],
 		getAllClientsHandler

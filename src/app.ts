@@ -1,3 +1,5 @@
+import 'dotenv/config'
+
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express from 'express'
@@ -6,9 +8,12 @@ import { config } from './config'
 import errorHandler from './middlewares/error-handler'
 import routes from './routes'
 import { connectToDB } from './utils/connect-db'
+import { IS_DEV } from './utils/constant'
 import { corsOptions } from './utils/cors-options'
 
 const app = express()
+
+console.log('env', IS_DEV)
 
 // <-- MIDDLEWARES -->
 app.use(
@@ -22,7 +27,6 @@ app.use(express.urlencoded({ extended: true }))
 
 app.use(routes())
 app.use(errorHandler)
-
 
 // mongoose default to remove both "_id" and version number from response
 mongoose.set('toJSON', {

@@ -1,14 +1,16 @@
 import mongoose from 'mongoose'
+import type { InvoiceDocument } from '../invoices/invoice.model'
 
 export interface ClientDocument extends mongoose.Document {
-	id: string
-	name: string
-	email: string
-	phone: string
-	address: string
-	created_at: Date
-	updated_at: Date
-}
+		id: string
+		name: string
+		email: string
+		phone: string
+		address: string
+		invoices: InvoiceDocument['id'][]
+		created_at: Date
+		updated_at: Date
+	}
 
 const clientModel = new mongoose.Schema(
 	{
@@ -23,13 +25,18 @@ const clientModel = new mongoose.Schema(
 		},
 		phone: {
 			type: String,
-			unique: true,
 			required: true,
 		},
 		address: {
 			type: String,
 			required: true,
 		},
+		invoices: [
+			{
+				type: mongoose.Schema.Types.ObjectId,
+				ref: 'Invoice',
+			},
+		],
 	},
 	{
 		timestamps: {

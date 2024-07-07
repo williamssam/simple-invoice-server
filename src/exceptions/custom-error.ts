@@ -16,6 +16,7 @@ export class CustomError extends Error {
 			stack?: string
 		) {
 			super(message)
+
 			this.message = message
 			this.success = success
 			this.additional_info = additional_info

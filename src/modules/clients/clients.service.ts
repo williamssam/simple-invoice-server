@@ -16,10 +16,6 @@ export const findClient = (
 	options: QueryOptions = { lean: true }
 ) => {
 	return ClientModel.findOne(query, {}, options)
-	// .populate(
-	// 	'invoices',
-	// 	'id url resource_type'
-	// )
 }
 
 export const findAndUpdateClient = (
@@ -41,7 +37,7 @@ export const getAllClients = ({
 	skip: number
 	limit: number
 }) => {
-	return ClientModel.find({}).limit(limit).skip(skip)
+	return ClientModel.find({}).limit(limit).skip(skip).sort({ createdAt: -1 })
 	// .populate('asset', 'id url resource_type')
 }
 
