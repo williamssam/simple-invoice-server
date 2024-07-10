@@ -14,3 +14,5 @@ export const INVOICE_STATUS = [
 	'cancelled',
 	'unpaid',
 ] as const
+
+export const page_limit = 15

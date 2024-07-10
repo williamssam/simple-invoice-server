@@ -4,9 +4,8 @@ import { validateResource } from '../../middlewares/validate-resource'
 import {
 	createInvoiceHandler,
 	deleteInvoiceHandler,
-	getAllInvoicesHandler,
+	getAllInvoiceHandler,
 	getInvoiceHandler,
-	getInvoiceMetricHandler,
 	updateInvoiceHandler,
 	updateInvoiceStatusHandler,
 } from './invoice.controller'
@@ -26,7 +25,7 @@ export default (router: Router) => {
 	router.get(
 		`${config.api_url_prefix}/invoices`,
 		[validateResource(getAllInvoicesSchema)],
-		getAllInvoicesHandler
+		getAllInvoiceHandler
 	)
 
 	/**
@@ -76,13 +75,5 @@ export default (router: Router) => {
 		`${config.api_url_prefix}/invoice/:id`,
 		[validateResource(deleteInvoiceSchema)],
 		deleteInvoiceHandler
-	)
-
-	/**
-	 * @description Get invoice metric endpoint
-	 */
-	router.get(
-		`${config.api_url_prefix}/invoices/metric`,
-		getInvoiceMetricHandler
 	)
 }

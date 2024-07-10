@@ -4,7 +4,7 @@ import { INVOICE_STATUS } from '../../utils/constant'
 
 const payload = {
 	body: z.object({
-		recipient: z
+		client: z
 			.string({
 				required_error: 'Client ID is required',
 			})
@@ -22,9 +22,6 @@ const payload = {
 				required_error: 'Project name is required',
 			})
 			.trim(),
-		// status: z.enum(status, {
-		// 	required_error: 'Status is required',
-		// }),
 		items: z.array(
 			z.object({
 				description: z
@@ -49,16 +46,11 @@ const payload = {
 				required_error: 'Tax is required',
 			})
 			.nonnegative(),
-		items_total: z
-			.number({
-				required_error: 'Items total is required',
+		currency: z
+			.string({
+				required_error: 'Currency is required',
 			})
-			.nonnegative(),
-		total_amount: z
-			.number({
-				required_error: 'Total amount is required',
-			})
-			.nonnegative(),
+			.catch('NGN'),
 		issued_date: z.coerce.date({
 			required_error: 'Issued date is required',
 		}),
@@ -81,12 +73,7 @@ const params = {
 	}),
 }
 
-//
-const createInvoiceSchema = z.object({ ...payload })
-const updateInvoiceSchema = z.object({ ...payload, ...params })
-const deleteInvoiceSchema = z.object({ ...params })
-const getInvoiceSchema = z.object({ ...params })
-const getAllInvoicesSchema = z.object({
+const query = {
 	query: z.object({
 		page: z
 			.string({
@@ -104,10 +91,25 @@ const getAllInvoicesSchema = z.object({
 		// 	}).nullable().catch(null),
 		// search: z.string().catch(''),
 	}),
-})
+}
+
+//
+const createInvoiceSchema = z.object({ ...payload })
+const updateInvoiceSchema = z.object({ ...payload, ...params })
+const deleteInvoiceSchema = z.object({ ...params })
+const getInvoiceSchema = z.object({ ...params })
+const getAllInvoicesSchema = z.object({ ...query })
 const updateInvoiceStatusSchema = z.object({
 	params: params.params.extend({
 		status: z.enum(INVOICE_STATUS).catch('all'),
+	}),
+})
+const monthlyInvoiceMetricSchema = z.object({
+	params: z.object({
+		date: z
+			.string()
+			.date('Invalid date string, date format: YYYY-MM-DD')
+			.catch(new Date().toISOString()),
 	}),
 })
 
@@ -120,18 +122,23 @@ type UpdateInvoiceStatusInput = z.infer<
 type DeleteInvoiceInput = z.infer<typeof deleteInvoiceSchema>['params']
 type GetInvoiceInput = z.infer<typeof getInvoiceSchema>['params']
 type GetAllInvoicesInput = z.infer<typeof getAllInvoicesSchema>['query']
+type MonthlyInvoiceMetricInput = z.infer<
+	typeof monthlyInvoiceMetricSchema
+>['params']
 
 export {
 	createInvoiceSchema,
 	deleteInvoiceSchema,
 	getAllInvoicesSchema,
 	getInvoiceSchema,
+	monthlyInvoiceMetricSchema,
 	updateInvoiceSchema,
 	updateInvoiceStatusSchema,
 	type CreateInvoiceInput,
 	type DeleteInvoiceInput,
 	type GetAllInvoicesInput,
 	type GetInvoiceInput,
+	type MonthlyInvoiceMetricInput,
 	type UpdateInvoiceInput,
 	type UpdateInvoiceStatusInput,
 }

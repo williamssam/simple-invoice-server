@@ -4,7 +4,7 @@ import InvoiceModel, { type InvoiceDocument } from './invoice.model'
 
 type InvoiceInput = Pick<
 	InvoiceDocument,
-	| 'recipient'
+	| 'client'
 	| 'invoice_number'
 	| 'project_name'
 	| 'issued_date'
@@ -39,13 +39,13 @@ export const deleteInvoice = (query: FilterQuery<InvoiceDocument>) => {
 	return InvoiceModel.deleteOne(query)
 }
 
-type getAllInvoiceParams = {
+type GetAllInvoiceParam = {
 	limit: number
 	skip: number
 	status: (typeof INVOICE_STATUS)[number]
 }
 
-export const getAllInvoice = ({ skip, limit, status }: getAllInvoiceParams) => {
+export const getAllInvoice = ({ skip, limit, status }: GetAllInvoiceParam) => {
 	let filter = {}
 
 	if (status !== 'all') {
@@ -53,21 +53,24 @@ export const getAllInvoice = ({ skip, limit, status }: getAllInvoiceParams) => {
 	}
 
 	// should be able search
-	return (
-		InvoiceModel.find(filter)
-			.limit(limit)
-			.skip(skip)
-			// might be able to sort by asc/desc order
-			.sort({ created_at: -1 })
-			.populate('recipient', 'name email phone address')
-			.setOptions({ sanitizeFilter: true })
-	)
+	return InvoiceModel.find(filter)
+		.limit(limit)
+		.skip(skip)
+		.sort({ created_at: -1 })
+		.populate('client', 'name email')
+	// .select('client invoice_number issued_date due_date status')
+}
+
+export const findInvoiceMetric = (date: Date) => {
+	return InvoiceModel.aggregate([
+		{
+			$match: {
+				created_at: date,
+			},
+		},
+	])
 }
 
 export const totalInvoice = () => {
 	return InvoiceModel.estimatedDocumentCount()
-}
-
-export const countInvoice = (query: FilterQuery<InvoiceDocument>) => {
-	return InvoiceModel.countDocuments(query)
 }

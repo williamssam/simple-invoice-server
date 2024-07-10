@@ -2,6 +2,8 @@ import type { NextFunction, Request, Response } from 'express'
 import { ApiError } from '../../exceptions/api-error'
 import { HttpStatusCode } from '../../types'
 import { INVOICE_STATUS } from '../../utils/constant'
+import { calculate } from '../../utils/money'
+import { findClientById } from '../client/client.service'
 import type {
 	CreateInvoiceInput,
 	GetAllInvoicesInput,
@@ -9,7 +11,6 @@ import type {
 	UpdateInvoiceStatusInput,
 } from './invoice.schema'
 import {
-	countInvoice,
 	createInvoice,
 	deleteInvoice,
 	findAndUpdateInvoice,
@@ -19,7 +20,7 @@ import {
 	totalInvoice,
 } from './invoice.service'
 
-export const getAllInvoicesHandler = async (
+export const getAllInvoiceHandler = async (
 	req: Request<unknown, unknown, unknown, GetAllInvoicesInput>,
 	res: Response,
 	next: NextFunction
@@ -32,14 +33,18 @@ export const getAllInvoicesHandler = async (
 		const limit = 15
 		const skip = (page - 1) * limit
 
-		const invoices = await getAllInvoice({ skip, limit, status })
+		const data = await getAllInvoice({ skip, limit, status })
+		const invoices = data.map(invoice => ({
+			...invoice.toJSON(),
+			total: calculate.total(invoice),
+			subtotal: calculate.subtotal(invoice),
+		}))
 		const total = await totalInvoice()
 
 		return res.status(HttpStatusCode.OK).json({
 			success: true,
 			message: 'Invoices fetched successfully!',
 			data: invoices,
-			params: { status },
 			meta: {
 				total,
 				current_page: page,
@@ -62,7 +67,12 @@ export const createInvoiceHandler = async (
 	next: NextFunction
 ) => {
 	try {
-		const { invoice_number } = req.body
+		const { invoice_number, client } = req.body
+
+		const clientExists = await findClientById(client)
+		if (!clientExists) {
+			throw new ApiError('Client not found!', HttpStatusCode.NOT_FOUND)
+		}
 
 		const invoiceWithSameNumberExists = await findInvoice({ invoice_number })
 		if (invoiceWithSameNumberExists) {
@@ -78,12 +88,17 @@ export const createInvoiceHandler = async (
 			status: 'draft',
 		})
 
-		// send email
+		const subtotal = calculate.subtotal(invoice)
+		const total = calculate.total(invoice)
 
 		return res.status(HttpStatusCode.CREATED).json({
 			success: true,
 			message: 'Invoice created successfully!',
-			data: invoice,
+			data: {
+				...invoice.toJSON(),
+				subtotal,
+				total,
+			},
 		})
 	} catch (error) {
 		next(error)
@@ -101,8 +116,8 @@ export const updateInvoiceHandler = async (
 ) => {
 	try {
 		const { id } = req.params
-		const invoiceExists = await findInvoice({ _id: id })
 
+		const invoiceExists = await findInvoiceById(id)
 		if (!invoiceExists) {
 			throw new ApiError('Invoice not found!', HttpStatusCode.NOT_FOUND)
 		}
@@ -113,10 +128,19 @@ export const updateInvoiceHandler = async (
 			{ new: true }
 		)
 
+		// @ts-expect-error
+		const subtotal = calculate.subtotal(invoice)
+		// @ts-expect-error
+		const total = calculate.total(invoice)
+
 		return res.status(HttpStatusCode.OK).json({
 			success: true,
 			message: 'Invoice updated successfully!',
-			data: invoice,
+			data: {
+				...invoice?.toJSON(),
+				subtotal,
+				total,
+			},
 		})
 	} catch (error) {
 		next(error)
@@ -131,7 +155,7 @@ export const updateInvoiceStatusHandler = async (
 	try {
 		const { id, status } = req.params
 
-		const invoiceExists = await findInvoice({ _id: id })
+		const invoiceExists = await findInvoiceById(id)
 		if (!invoiceExists) {
 			throw new ApiError('Invoice not found!', HttpStatusCode.NOT_FOUND)
 		}
@@ -151,8 +175,8 @@ export const updateInvoiceStatusHandler = async (
 
 		return res.status(HttpStatusCode.OK).json({
 			success: true,
-			message: 'Invoice updated successfully!',
-			data: invoice,
+			message: 'Invoice status updated successfully!',
+			// data: invoice,
 		})
 	} catch (error) {
 		next(error)
@@ -166,8 +190,8 @@ export const deleteInvoiceHandler = async (
 ) => {
 	try {
 		const { id } = req.params
-		const invoiceExists = await findInvoice({ _id: id })
 
+		const invoiceExists = await findInvoiceById(id)
 		if (!invoiceExists) {
 			throw new ApiError('Invoice not found!', HttpStatusCode.NOT_FOUND)
 		}
@@ -197,50 +221,27 @@ export const getInvoiceHandler = async (
 
 		const invoice = await findInvoice(
 			{ _id: id },
-			{ populate: { path: 'recipient', select: 'name email phone address' } }
+			{ populate: { path: 'client', select: 'name email' } }
 		)
+
+		// @ts-expect-error
+		const subtotal = calculate.subtotal(invoice)
+		// @ts-expect-error
+		const total = calculate.total(invoice)
 
 		return res.status(HttpStatusCode.OK).json({
 			success: true,
 			message: 'Invoice fetched successfully!',
-			data: invoice,
+			data: {
+				...invoice?.toJSON(),
+				subtotal,
+				total,
+			},
 		})
 	} catch (error) {
 		next(error)
 	}
 }
-
-// TODO: might add this to another controller
-export const getInvoiceMetricHandler = async (
-	req: Request,
-	res: Response,
-	next: NextFunction
-) => {
-	const total = await totalInvoice()
-	const total_draft = await countInvoice({ status: 'draft' })
-	const total_overdue = await countInvoice({ status: 'overdue' })
-	const total_paid = await countInvoice({ status: 'paid' })
-	const total_cancelled = await countInvoice({ status: 'cancelled' })
-	const total_unpaid = await countInvoice({ status: 'unpaid' })
-
-	// add total amount received
-	// add total sent
-
-	return res.status(HttpStatusCode.OK).json({
-		success: true,
-		message: 'Invoice metric fetched successfully!',
-		data: {
-			total_invoice: total,
-			total_draft,
-			total_overdue,
-			total_paid,
-			total_cancelled,
-			total_unpaid,
-		},
-	})
-}
-
-export const monthlyInvoiceMetricHandler = async () => {}
 
 export const invoicePaymentHandler = () => {}
 

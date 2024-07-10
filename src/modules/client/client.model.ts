@@ -1,16 +1,16 @@
 import mongoose from 'mongoose'
-import type { InvoiceDocument } from '../invoices/invoice.model'
+import type { InvoiceDocument } from '../invoice/invoice.model'
 
 export interface ClientDocument extends mongoose.Document {
-		id: string
-		name: string
-		email: string
-		phone: string
-		address: string
-		invoices: InvoiceDocument['id'][]
-		created_at: Date
-		updated_at: Date
-	}
+	id: string
+	name: string
+	email: string
+	phone: string
+	address: string
+	invoices: InvoiceDocument['id'][]
+	created_at: Date
+	updated_at: Date
+}
 
 const clientModel = new mongoose.Schema(
 	{
@@ -27,10 +27,7 @@ const clientModel = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
-		address: {
-			type: String,
-			required: true,
-		},
+		address: String,
 		invoices: [
 			{
 				type: mongoose.Schema.Types.ObjectId,
@@ -45,6 +42,8 @@ const clientModel = new mongoose.Schema(
 		},
 	}
 )
+// You can only search by name or email. I might add "phone" later
+clientModel.index({ email: 'text', name: 'text' })
 
 const ClientModel = mongoose.model('Client', clientModel)
 

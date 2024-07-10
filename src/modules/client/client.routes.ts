@@ -6,6 +6,7 @@ import {
 	deleteClientHandler,
 	getAllClientsHandler,
 	getClientHandler,
+	getClientInvoicesHandler,
 	updateClientHandler,
 } from './client.controller'
 import {
@@ -54,6 +55,16 @@ export default (router: Router) => {
 		`${config.api_url_prefix}/client/:id`,
 		[validateResource(getClientSchema)],
 		getClientHandler
+	)
+
+	/**
+	 * @description Get one client invoice endpoint
+	 * @param {string} id
+	 */
+	router.get(
+		`${config.api_url_prefix}/client/:id/invoice`,
+		[validateResource(getClientSchema)],
+		getClientInvoicesHandler
 	)
 
 	/**

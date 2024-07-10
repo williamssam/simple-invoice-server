@@ -1,8 +1,9 @@
 import { Router } from 'express'
 import { config } from './config'
 import { checkHTTPMethod } from './middlewares/check-method'
-import clientRoutes from './modules/clients/client.routes'
-import invoiceRoutes from './modules/invoices/invoice.routes'
+import clientRoutes from './modules/client/client.routes'
+import invoiceRoutes from './modules/invoice/invoice.routes'
+import reportRoutes from './modules/report/report.routes'
 
 const router = Router()
 
@@ -13,6 +14,7 @@ export default (): Router => {
 
 	clientRoutes(router)
 	invoiceRoutes(router)
+	reportRoutes(router)
 
 	// handle not found routes
 

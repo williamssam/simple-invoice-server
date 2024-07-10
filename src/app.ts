@@ -3,6 +3,7 @@ import 'dotenv/config'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express from 'express'
+import helmet from 'helmet'
 import mongoose from 'mongoose'
 import { config } from './config'
 import errorHandler from './middlewares/error-handler'
@@ -21,6 +22,7 @@ app.use(
 		origin: corsOptions,
 	})
 )
+app.use(helmet())
 app.use(cookieParser())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
@@ -32,6 +34,8 @@ app.use(errorHandler)
 mongoose.set('toJSON', {
 	virtuals: true,
 	transform: (doc, converted) => {
+		if (!converted._id) return
+
 		converted.id = converted._id.toHexString()
 		// biome-ignore lint/performance/noDelete: <explanation>
 		delete converted._id

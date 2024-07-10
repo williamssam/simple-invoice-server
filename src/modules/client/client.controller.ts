@@ -1,10 +1,14 @@
 import type { NextFunction, Request, Response } from 'express'
 import { ApiError } from '../../exceptions/api-error'
 import { HttpStatusCode } from '../../types'
+import { page_limit } from '../../utils/constant'
+import { calculate } from '../../utils/money'
 import type {
 	CreateClientInput,
 	DeleteClientInput,
+	GetAllClientsInput,
 	GetClientInput,
+	GetClientInvoicesInput,
 	UpdateClientInput,
 } from './client.schema'
 import {
@@ -13,9 +17,11 @@ import {
 	findAndUpdateClient,
 	findClient,
 	findClientById,
+	getAllClientInvoice,
 	getAllClients,
 	totalClient,
-} from './clients.service'
+	totalClientInvoice,
+} from './client.service'
 
 export const createClientHandler = async (
 	req: Request<unknown, unknown, CreateClientInput>,
@@ -41,7 +47,6 @@ export const createClientHandler = async (
 				HttpStatusCode.BAD_REQUEST
 			)
 		}
-
 
 		const client = await createClient(req.body)
 
@@ -113,11 +118,13 @@ export const getClientHandler = async (
 ) => {
 	try {
 		const { id } = req.params
-		const client = await findClientById(id)
+		const clientExists = await findClientById(id)
 
-		if (!client) {
+		if (!clientExists) {
 			throw new ApiError('Client not found!', HttpStatusCode.NOT_FOUND)
 		}
+
+		const client = await findClient({ _id: id }, { invoices: 0 }, { new: true })
 
 		// TODO: remove "invoices" from the response
 
@@ -132,18 +139,18 @@ export const getClientHandler = async (
 }
 
 export const getAllClientsHandler = async (
-	req: Request,
+	req: Request<unknown, unknown, unknown, GetAllClientsInput>,
 	res: Response,
 	next: NextFunction
 ) => {
 	try {
-		// const clients = await findClient({})
-		const page = Number(req.params.page as string) || 1
+		const { page: requestedPage, search } = req.query
 
-		const limit = 15
+		const page = Number(requestedPage) || 1
+		const limit = page_limit
 		const skip = (page - 1) * limit
 
-		const clients = await getAllClients({ skip, limit })
+		const clients = await getAllClients({ skip, search })
 		const total = await totalClient()
 
 		return res.status(HttpStatusCode.OK).json({
@@ -166,4 +173,58 @@ export const getAllClientsHandler = async (
 	}
 }
 
-export const getClientInvoicesHandler = () => {}
+export const getClientInvoicesHandler = async (
+	req: Request<
+		GetClientInvoicesInput['params'],
+		unknown,
+		unknown,
+		GetClientInvoicesInput['query']
+	>,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const { id } = req.params
+		const { page: requestedPage, status: requestedStatus } = req.query
+
+		const client = await findClientById(id)
+		if (!client) {
+			throw new ApiError('Client not found!', HttpStatusCode.NOT_FOUND)
+		}
+
+		const page = Number(requestedPage) || 1
+		const status = requestedStatus ?? 'all'
+		const limit = 15
+		const skip = (page - 1) * limit
+		const total = await totalClientInvoice(id)
+
+		const data = await getAllClientInvoice({
+			id,
+			skip,
+			status,
+		})
+		const client_invoices = data.map(invoice => ({
+			...invoice.toJSON(),
+			total: calculate.total(invoice),
+			subtotal: calculate.subtotal(invoice),
+		}))
+
+		return res.status(HttpStatusCode.OK).json({
+			success: true,
+			message: 'Client invoices fetched successfully!',
+			data: client_invoices,
+			meta: {
+				total,
+				current_page: page,
+				per_page: limit,
+				total_pages: Math.ceil(total / limit) || 1,
+				has_next_page: page < Math.ceil(total / limit),
+				has_prev_page: page > 1,
+				next_page: page + 1,
+				prev_page: page - 1 || 1,
+			},
+		})
+	} catch (error) {
+		next(error)
+	}
+}
