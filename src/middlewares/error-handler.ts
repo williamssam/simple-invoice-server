@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
-import type {
+import {
 	CustomError,
-	CustomErrorResponse,
+	type CustomErrorResponse,
 } from '../exceptions/custom-error'
 import { HttpStatusCode } from '../types'
 import { IS_DEV } from '../utils/constant'
@@ -12,14 +12,7 @@ const errorHandler = (
 	res: Response,
 	next: NextFunction
 ) => {
-	// log.error(err)
-	// if (err instanceof MongooseError) {
-	// 	return res.status(503).json({
-	// 		success:false,
-	// 		message: err.message,
-	// 	})
-	// }
-	if (err) {
+	if (!(err instanceof CustomError)) {
 		// TODO: this does not make sense small, how do we know if its throwing an internal server error
 		return res.status(HttpStatusCode.INTERNAL_SERVER).json({
 			message: 'Internal Server error. Something went wrong',

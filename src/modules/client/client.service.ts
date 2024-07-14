@@ -8,7 +8,7 @@ import { type INVOICE_STATUS, page_limit } from '../../utils/constant'
 import InvoiceModel from '../invoice/invoice.model'
 import ClientModel, { type ClientDocument } from './client.model'
 
-type ClientInput = Pick<ClientDocument, 'name' | 'address' | 'email' | 'phone'>
+type ClientInput = Pick<ClientDocument, 'name' | 'email' | 'phone'>
 
 export const createClient = (input: ClientInput) => {
 	return ClientModel.create(input)

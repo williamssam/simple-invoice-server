@@ -2,11 +2,13 @@ import type { NextFunction, Request, Response } from 'express'
 import { ApiError } from '../../exceptions/api-error'
 import { HttpStatusCode } from '../../types'
 import { INVOICE_STATUS } from '../../utils/constant'
+import { sendMail } from '../../utils/mailer'
 import { calculate } from '../../utils/money'
 import { findClientById } from '../client/client.service'
 import type {
 	CreateInvoiceInput,
 	GetAllInvoicesInput,
+	GetInvoiceInput,
 	UpdateInvoiceInput,
 	UpdateInvoiceStatusInput,
 } from './invoice.schema'
@@ -245,4 +247,48 @@ export const getInvoiceHandler = async (
 
 export const invoicePaymentHandler = () => {}
 
-export const sendInvoiceViaMailHandler = () => {}
+export const sendInvoiceViaMailHandler = async (
+	req: Request<GetInvoiceInput>,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const { id } = req.params
+		const invoice = await findInvoiceById(id)
+		if (!invoice) {
+			throw new ApiError('Invoice not found!', HttpStatusCode.NOT_FOUND)
+		}
+
+		// send mail
+		await sendMail({
+			to: invoice.client,
+
+			subject: `Invoice for ${invoice.project_name}`,
+		})
+	} catch (error) {
+		next(error)
+	}
+}
+
+export const sendInvoiceReminderMailHandler = async (
+	req: Request<GetInvoiceInput>,
+	res: Response,
+	next: NextFunction
+) => {
+	try {
+		const { id } = req.params
+		const invoice = await findInvoiceById(id)
+		if (!invoice) {
+			throw new ApiError('Invoice not found!', HttpStatusCode.NOT_FOUND)
+		}
+
+		// send mail
+		await sendMail({
+			to: invoice.client,
+
+			subject: `Reminder: Invoice for ${invoice.project_name}`,
+		})
+	} catch (error) {
+		next(error)
+	}
+}

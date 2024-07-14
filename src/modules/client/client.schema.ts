@@ -22,12 +22,6 @@ const payload = {
 			.min(11, 'Phone number should be 11 digits long')
 			.max(11, 'Phone number should not be 11 digits long')
 			.trim(),
-		address: z
-			.string({
-				required_error: 'Client address is required',
-			})
-			.trim()
-			.or(z.literal('')),
 	}),
 }
 

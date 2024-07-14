@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express'
-import type { AnyZodObject } from 'zod'
+import { type AnyZodObject, ZodError } from 'zod'
+import { HttpStatusCode } from '../types'
 
 export const validateResource =
 	(schema: AnyZodObject) =>
@@ -12,6 +13,17 @@ export const validateResource =
 			})
 			next()
 		} catch (error: any) {
-			return res.status(400).send(error.errors)
+			if (error instanceof ZodError) {
+				const errorMessage = error.errors.map(err => ({
+					message: err.message,
+					path: err.path[1],
+				}))
+				return res.status(HttpStatusCode.BAD_REQUEST).json({
+					success: false,
+					errors: errorMessage,
+				})
+			}
+
+			return res.status(HttpStatusCode.INTERNAL_SERVER).send(error.errors)
 		}
 	}

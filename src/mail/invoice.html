@@ -1,11 +1,388 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Invoice</title>
-</head>
-<body>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@200;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+		<title>Simple Invoice</title>
 
-</body>
+		<style>
+			:root {
+				font-size: 10px;
+			}
+
+			html {
+				scroll-behavior: smooth;
+			}
+
+			*:where(:not(iframe, canvas, img, svg, video):not(svg *, a)) {
+				all: unset;
+				display: revert;
+			}
+
+			*,
+			*::before,
+			*::after {
+				box-sizing: border-box;
+				margin: 0;
+				padding: 0;
+			}
+
+			ol,
+			ul {
+				list-style: none;
+			}
+
+			img,
+			picture {
+				max-width: 100%;
+				display: block;
+			}
+
+			h1,
+			h2,
+			h3 {
+				line-height: 1.2;
+			}
+
+			a {
+				color: currentColor;
+				text-decoration: none;
+			}
+
+			strong {
+				font-weight: 700;
+				color: #525252;
+			}
+
+			body {
+				font-size: 1.2rem;
+				line-height: 1.6;
+				min-height: 100vh;
+				font-family: Poppins, sans-serif;
+				color: #525252;
+				font-weight: normal;
+			}
+			input,
+			select,
+			button,
+			textarea {
+				font: inherit;
+			}
+			.container {
+				margin-inline: auto;
+				width: min(90vw, 700px);
+				padding: 1rem;
+				display: flex;
+				flex-direction: column;
+			}
+
+			.header {
+				background-color: #0c0a09;
+				padding: 2rem;
+				border-radius: 5px;
+				color: #d4d4d4;
+			}
+
+			.title {
+				font-size: 5rem;
+				font-weight: 900;
+				line-height: 1;
+				color: #f5f5f5;
+			}
+
+			.inv-number {
+				font-size: 1.3rem;
+				font-weight: 500;
+			}
+
+			.project {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				border-top: 1px solid #d4d4d4;
+				border-bottom: 1.8px solid #a3a3a3;
+				padding: 1.5rem 0;
+				margin-top: 1.5rem;
+			}
+
+			.project-details {
+				display: flex;
+				gap: 2rem;
+			}
+
+			.section {
+				display: grid;
+				grid-template-columns: 1fr 280px;
+				/* gap: 5rem; */
+			}
+
+			.client-info {
+				display: flex;
+				width: 100%;
+				align-items: center;
+				gap: 5rem;
+				padding: 4rem 2rem;
+				background-color: #fafafa;
+			}
+
+			.client-info-title {
+				font-weight: 600;
+				font-size: 1.35rem;
+				text-transform: uppercase;
+				letter-spacing: 1px;
+				margin-bottom: 0.5rem;
+				color: #2563eb;
+			}
+
+			.client-info-company {
+				font-size: 1.35rem;
+				font-weight: 700;
+				margin-bottom: 0.5rem;
+				padding-top: 1rem;
+				color: #525252;
+			}
+
+			.payment-method {
+				background-color: #e5e5e5;
+				border-left: 1px solid #d4d4d4;
+				border-right: 1px solid #d4d4d4;
+				padding: 2rem;
+				flex: 1;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+			}
+
+			.payment {
+				display: flex;
+				flex-direction: column;
+				/* align-items: center; */
+			}
+
+			.payment a {
+				width: 250px;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+				color: #2563eb;
+				text-decoration: underline;
+				font-size: 1rem;
+				font-weight: 600;
+			}
+
+			.payment p {
+				font-size: 1rem;
+				text-transform: uppercase;
+			}
+
+			.heading {
+				font-weight: 600;
+				font-size: 1.3rem;
+				text-transform: uppercase;
+				letter-spacing: 1.5px;
+				margin-bottom: 0.5rem;
+			}
+
+			.items {
+				flex: 1;
+			}
+
+			.item {
+				display: grid;
+				grid-template-columns: 4fr 1fr 1fr 1fr;
+				align-items: center;
+				padding: 1.25rem 1rem;
+			}
+
+			.item p {
+				font-weight: 500;
+				color: #737373;
+			}
+
+			.item-header {
+				border-top: 1.8px solid #a3a3a3;
+				border-bottom: 1px solid #e5e5e5;
+			}
+
+			.item-header p {
+				font-weight: 600;
+				font-size: 1.2rem;
+				text-transform: uppercase;
+				letter-spacing: 2px;
+				color: #737373;
+			}
+
+			.item-header p:last-of-type {
+				text-align: end;
+			}
+
+			.item-values {
+				padding: 1.25rem 1rem;
+				font-size: 1.3rem;
+			}
+
+			.item-values:nth-child(odd) {
+				background-color: #fafafa;
+				border-radius: 5px;
+			}
+
+			.item-values p:last-of-type {
+				font-weight: 600;
+				text-align: right;
+				color: #525252;
+			}
+
+			.item-footer {
+				padding: 0.5rem 1rem;
+			}
+
+			.item-footer p:last-of-type {
+				font-size: 1.3rem;
+				font-weight: 600;
+				text-align: right;
+				color: #525252;
+			}
+
+			.item-footer .total {
+				font-weight: 700 !important;
+				font-size: 2rem !important;
+				color: #2563eb !important;
+			}
+
+			.footer {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				background-color: #0a0a0a;
+				padding: 1rem 2rem;
+				margin-top: 8rem;
+				border-radius: 5px;
+				color: #f5f5f5;
+			}
+
+			.thanks {
+				font-size: 1.2rem;
+				font-weight: 600;
+			}
+
+			.generated {
+				font-size: 1rem;
+				font-weight: 300;
+			}
+		</style>
+	</head>
+	<body>
+		<main class="container">
+			<div class="header">
+				<h1 class="title">Invoice.</h1>
+
+				<p class="inv-number">INV-882-1119-2231</p>
+			</div>
+
+			<div class="project">
+				<p class="project-name">Project name: <strong>Logo and Brand Redesign</strong></p>
+
+				<div class="project-details">
+					<p class="date">Issued date: <strong>20 Dec, 2022</strong></p>
+					<p class="date">Due date: <strong>20 Dec, 2024</strong></p>
+				</div>
+			</div>
+
+			<div class="section">
+				<div class="client-info">
+					<div class="client">
+						<p class="client-info-title">FROM:</p>
+
+						<h3 class="client-info-company">Company Name</h3>
+
+						<p>123 Main Street</p>
+						<p>City, State 12345</p>
+						<p>123-456-7890</p>
+						<p>CqZjz@example.com</p>
+					</div>
+
+					<div class="client">
+						<p class="client-info-title">TO:</p>
+
+						<h3 class="client-info-company">John Doe</h3>
+
+						<p>123 Main Street</p>
+						<p>City, State 12345</p>
+						<p>123-456-7890</p>
+						<p>CqZjz@example.com</p>
+					</div>
+				</div>
+
+				<div class="payment-method">
+					<p class="heading">Payment Method</p>
+
+					<div class="payment">
+						<a href="#">https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg</a>
+						<p>Click to pay</p>
+					</div>
+
+					<div class="payment">
+						<img class="qr" width="80" height="80" src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" alt="scan qr to pay" />
+						<p>Scan QR code to pay</p>
+					</div>
+				</div>
+			</div>
+
+			<ul class="items">
+				<li class="item item-header">
+					<p>Description</p>
+					<p>Qty</p>
+					<p>Unit Price</p>
+					<p>Total</p>
+				</li>
+
+				<li class="item item-values">
+					<p>Description</p>
+					<p>2</p>
+					<p>N5,000</p>
+					<p>N10,000</p>
+				</li>
+				<li class="item item-values">
+					<p>Description</p>
+					<p>2</p>
+					<p>N5,000</p>
+					<p>N10,000</p>
+				</li>
+				<li class="item item-values">
+					<p>Description</p>
+					<p>2</p>
+					<p>N5,000</p>
+					<p>N10,000</p>
+				</li>
+
+				<li class="item item-footer">
+					<p></p>
+					<p></p>
+					<p>Subtotal</p>
+					<p>N10,000</p>
+				</li>
+				<li class="item item-footer">
+					<p></p>
+					<p></p>
+					<p>VAT (5%)</p>
+					<p>N10,000</p>
+				</li>
+				<li class="item item-footer">
+					<p></p>
+					<p></p>
+					<p>Total</p>
+					<p class="total">N10,000</p>
+				</li>
+			</ul>
+
+			<footer class="footer">
+				<p class="thanks">Thank you!</p>
+
+				<p class="generated">Generated by Simple Invoice</p>
+			</footer>
+		</main>
+	</body>
 </html>

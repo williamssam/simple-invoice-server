@@ -22,7 +22,7 @@ export interface InvoiceDocument extends mongoose.Document {
 			quantity: number
 			price: number
 		}[]
-		tax: number
+		vat: number
 		currency: string
 		issued_date: Date
 		due_date: Date
@@ -80,7 +80,7 @@ const invoiceSchema = new mongoose.Schema(
 			type: String,
 			default: 'NGN',
 		},
-		tax: {
+		vat: {
 			type: Number,
 			required: true,
 			default: 0,

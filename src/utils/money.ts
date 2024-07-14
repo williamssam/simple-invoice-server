@@ -11,7 +11,7 @@ export const calculate = {
 			return total + item.price * item.quantity
 		}, 0),
 	total: (invoices: InvoiceDocument) =>
-		calculate.subtotal(invoices) + invoices.tax,
+		calculate.subtotal(invoices) + invoices.vat,
 }
 
 

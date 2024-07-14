@@ -1,6 +1,5 @@
 import 'dotenv/config'
 
-import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
@@ -9,12 +8,9 @@ import { config } from './config'
 import errorHandler from './middlewares/error-handler'
 import routes from './routes'
 import { connectToDB } from './utils/connect-db'
-import { IS_DEV } from './utils/constant'
 import { corsOptions } from './utils/cors-options'
 
 const app = express()
-
-console.log('env', IS_DEV)
 
 // <-- MIDDLEWARES -->
 app.use(
@@ -23,10 +19,11 @@ app.use(
 	})
 )
 app.use(helmet())
-app.use(cookieParser())
+// app.use(cookieParser())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
+// TODO: handle route not found errors
 app.use(routes())
 app.use(errorHandler)
 

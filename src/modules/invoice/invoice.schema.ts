@@ -41,9 +41,9 @@ const payload = {
 					.nonnegative(),
 			})
 		),
-		tax: z
+		vat: z
 			.number({
-				required_error: 'Tax is required',
+				required_error: 'vat is required',
 			})
 			.nonnegative(),
 		currency: z
@@ -104,14 +104,7 @@ const updateInvoiceStatusSchema = z.object({
 		status: z.enum(INVOICE_STATUS).catch('all'),
 	}),
 })
-const monthlyInvoiceMetricSchema = z.object({
-	params: z.object({
-		date: z
-			.string()
-			.date('Invalid date string, date format: YYYY-MM-DD')
-			.catch(new Date().toISOString()),
-	}),
-})
+
 
 // TYPES
 type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>['body']
@@ -122,23 +115,19 @@ type UpdateInvoiceStatusInput = z.infer<
 type DeleteInvoiceInput = z.infer<typeof deleteInvoiceSchema>['params']
 type GetInvoiceInput = z.infer<typeof getInvoiceSchema>['params']
 type GetAllInvoicesInput = z.infer<typeof getAllInvoicesSchema>['query']
-type MonthlyInvoiceMetricInput = z.infer<
-	typeof monthlyInvoiceMetricSchema
->['params']
+
 
 export {
 	createInvoiceSchema,
 	deleteInvoiceSchema,
 	getAllInvoicesSchema,
 	getInvoiceSchema,
-	monthlyInvoiceMetricSchema,
 	updateInvoiceSchema,
 	updateInvoiceStatusSchema,
 	type CreateInvoiceInput,
 	type DeleteInvoiceInput,
 	type GetAllInvoicesInput,
 	type GetInvoiceInput,
-	type MonthlyInvoiceMetricInput,
 	type UpdateInvoiceInput,
 	type UpdateInvoiceStatusInput,
 }

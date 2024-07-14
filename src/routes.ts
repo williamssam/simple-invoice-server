@@ -16,11 +16,8 @@ export default (): Router => {
 	invoiceRoutes(router)
 	reportRoutes(router)
 
-	// handle not found routes
-
 	// handle http method not allowed
-	router.all('*', checkHTTPMethod)
-
+	router.all('/*', checkHTTPMethod)
 
 	return router
 }

@@ -16,13 +16,6 @@ export const checkHTTPMethod = (
 			)
 		}
 
-		if (res.statusCode === HttpStatusCode.NOT_FOUND) {
-			throw new ApiError(
-				`Route "${req.route}" does not exist!`,
-				HttpStatusCode.NOT_FOUND
-			)
-		}
-
 		next()
 	} catch (error) {
 		next(error)
