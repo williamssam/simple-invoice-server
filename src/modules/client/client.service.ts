@@ -51,7 +51,8 @@ export const getAllClients = ({ skip, search, id }: GetClientsParams) => {
 	if (search) {
 		filter = {
 			...filter,
-			// $text: { $search: search },
+			// @ts-expect-error property $text does not exist on filter
+			$text: { $search: search },
 		}
 	}
 
@@ -69,12 +70,14 @@ export const totalClient = () => {
 type ClientInvoiceParam = {
 	skip: number
 	status: (typeof INVOICE_STATUS)[number]
-	id: string
+	client_id: string
+	user_id: string
 }
 
 export const getAllClientInvoice = (params: ClientInvoiceParam) => {
 	const filter = {
-		client: params.id,
+		user_id: params.user_id,
+		client_id: params.client_id,
 	}
 
 	if (params.status !== 'all') {

@@ -1,9 +1,15 @@
 import type { FilterQuery } from 'mongoose'
+import type { UserDocument } from '../auth/user.model'
 import type { InvoiceDocument } from '../invoice/invoice.model'
 import InvoiceModel from '../invoice/invoice.model'
 
-export const countInvoice = (query: FilterQuery<InvoiceDocument>) => {
-	return InvoiceModel.countDocuments(query)
+export const countInvoice = (
+	query: FilterQuery<InvoiceDocument>,
+	id: UserDocument['id']
+) => {
+	return InvoiceModel.countDocuments({
+		$and: [{ user_id: id }, { ...query }],
+	})
 }
 
 // aggregate by status

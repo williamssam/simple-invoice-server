@@ -208,8 +208,8 @@ export const getAllClientsHandler = async (
 	next: NextFunction
 ) => {
 	try {
-		const user_id = res.locals.user._id
 		const { page: requestedPage, search } = req.query
+		const user_id = res.locals.user._id
 
 		const user = await findUserById(user_id)
 		if (!user) {
@@ -223,9 +223,13 @@ export const getAllClientsHandler = async (
 		const limit = page_limit
 		const skip = (page - 1) * limit
 
-		const data = getAllClients({ skip, search, id: user_id })
-		const clients = await data
-		const total = await data.countDocuments()
+		const clients = await getAllClients({ skip, search, id: user_id })
+		// TODO: this feels redundant, fix it
+		const total = await getAllClients({
+			skip,
+			search,
+			id: user_id,
+		}).countDocuments()
 
 		return res.status(HttpStatusCode.OK).json({
 			success: true,
@@ -260,6 +264,15 @@ export const getClientInvoicesHandler = async (
 	try {
 		const { id } = req.params
 		const { page: requestedPage, status: requestedStatus } = req.query
+			const user_id = res.locals.user._id
+
+		const user = await findUserById(user_id)
+		if (!user) {
+			throw new ApiError(
+				'No active session, please login',
+				HttpStatusCode.NOT_FOUND
+			)
+		}
 
 		const client = await findClientById(id)
 		if (!client) {
@@ -273,7 +286,8 @@ export const getClientInvoicesHandler = async (
 		const total = await totalClientInvoice(id)
 
 		const data = await getAllClientInvoice({
-			id,
+			client_id: id,
+			user_id: user.id,
 			skip,
 			status,
 		})

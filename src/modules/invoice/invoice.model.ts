@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import { INVOICE_STATUS } from '../../utils/constant'
 import { convertFromPennies, convertToPennies } from '../../utils/money'
+import type { UserDocument } from '../auth/user.model'
 import type { ClientDocument } from '../client/client.model'
 
 function getCosts(value: number) {
@@ -14,6 +15,7 @@ function getCosts(value: number) {
 export interface InvoiceDocument extends mongoose.Document {
 		id: string
 		client: ClientDocument['id']
+		user_id: UserDocument['id']
 		invoice_number: string
 		project_name: string
 		status: (typeof INVOICE_STATUS)[number]
@@ -56,6 +58,10 @@ const itemsSchema = new mongoose.Schema(
 // all amount are stored in Kobo (pennies) (100k = N1). Kobo is like the smallest unit of the nigerian currency.
 const invoiceSchema = new mongoose.Schema(
 	{
+		user_id: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User',
+		},
 		// TODO: client can be on the client list or a new client
 		client: {
 			type: mongoose.Schema.Types.ObjectId,
@@ -103,6 +109,12 @@ const invoiceSchema = new mongoose.Schema(
 		toJSON: {
 			// tell mongodb to use getters specified when converting to JSON
 			getters: true,
+			transform(doc, ret) {
+				ret.user_id = undefined
+				ret._id = undefined
+
+				return ret
+			},
 		},
 	}
 )

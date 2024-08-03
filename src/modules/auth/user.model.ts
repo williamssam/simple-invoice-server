@@ -9,7 +9,9 @@ export interface UserDocument extends mongoose.Document {
 		phone: string
 		is_verified: boolean
 		verify_code: string
+		verify_code_expires: Date
 		recover_code: string
+		recover_code_expires: Date
 		created_at: Date
 		updated_at: Date
 		token: string
@@ -39,7 +41,9 @@ const userSchema = new mongoose.Schema(
 			default: false,
 		},
 		verify_code: String,
+		verify_code_expires: Date,
 		recover_code: String,
+		recover_code_expires: Date,
 		//  This is the refresh token
 		token: String,
 		password: {
@@ -54,18 +58,14 @@ const userSchema = new mongoose.Schema(
 		},
 		toJSON: {
 			transform(doc, ret) {
-				// biome-ignore lint/performance/noDelete: <explanation>
-				delete ret.token
-				// biome-ignore lint/performance/noDelete: <explanation>
-				delete ret.__v
-				// biome-ignore lint/performance/noDelete: <explanation>
-				delete ret._id
-				// biome-ignore lint/performance/noDelete: <explanation>
-				delete ret.password
-				// biome-ignore lint/performance/noDelete: <explanation>
-				delete ret.verify_code
-				// biome-ignore lint/performance/noDelete: <explanation>
-				delete ret.recover_code
+				ret.token = undefined
+				ret.__v = undefined
+				ret._id = undefined
+				ret.password = undefined
+				ret.verify_code = undefined
+				ret.verify_code_expires = undefined
+				ret.recover_code = undefined
+				ret.recover_code_expires = undefined
 
 				return ret
 			},

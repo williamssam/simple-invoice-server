@@ -4,7 +4,8 @@ import { HttpStatusCode } from '../../types'
 import { INVOICE_STATUS } from '../../utils/constant'
 import { sendMail } from '../../utils/mailer'
 import { calculate } from '../../utils/money'
-import { findClientById } from '../client/client.service'
+import { findClient } from '../client/client.service'
+import { countInvoice } from '../report/report.service'
 import type {
 	CreateInvoiceInput,
 	GetAllInvoicesInput,
@@ -19,7 +20,6 @@ import {
 	findInvoice,
 	findInvoiceById,
 	getAllInvoice,
-	totalInvoice,
 } from './invoice.service'
 
 export const getAllInvoiceHandler = async (
@@ -29,19 +29,21 @@ export const getAllInvoiceHandler = async (
 ) => {
 	try {
 		const { page: requestedPage, status: requestedStatus } = req.query
+		const user_id = res.locals.user._id
+
 		const page = Number(requestedPage) || 1
 		const status = requestedStatus ?? 'all'
-
 		const limit = 15
 		const skip = (page - 1) * limit
 
-		const data = await getAllInvoice({ skip, limit, status })
+		const data = await getAllInvoice({ skip, limit, status, user_id })
+		const total = await countInvoice({}, user_id)
+
 		const invoices = data.map(invoice => ({
 			...invoice.toJSON(),
 			total: calculate.total(invoice),
 			subtotal: calculate.subtotal(invoice),
 		}))
-		const total = await totalInvoice()
 
 		return res.status(HttpStatusCode.OK).json({
 			success: true,
@@ -70,13 +72,18 @@ export const createInvoiceHandler = async (
 ) => {
 	try {
 		const { invoice_number, client } = req.body
+		const user_id = res.locals.user._id
 
-		const clientExists = await findClientById(client)
+		const clientExists = await findClient({
+			$and: [{ user_id }, { _id: client }],
+		})
 		if (!clientExists) {
 			throw new ApiError('Client not found!', HttpStatusCode.NOT_FOUND)
 		}
 
-		const invoiceWithSameNumberExists = await findInvoice({ invoice_number })
+		const invoiceWithSameNumberExists = await findInvoice({
+			$and: [{ user_id }, { invoice_number }],
+		})
 		if (invoiceWithSameNumberExists) {
 			throw new ApiError(
 				'Invoice with same number already exists!',
@@ -84,7 +91,10 @@ export const createInvoiceHandler = async (
 			)
 		}
 
-		const invoice = await createInvoice(req.body)
+		const invoice = await createInvoice({
+			...req.body,
+			user_id,
+		})
 
 		invoice.$set({
 			status: 'draft',
@@ -119,27 +129,35 @@ export const updateInvoiceHandler = async (
 	try {
 		const { id } = req.params
 
-		const invoiceExists = await findInvoiceById(id)
-		if (!invoiceExists) {
+		const invoice = await findInvoiceById(id)
+		if (!invoice) {
 			throw new ApiError('Invoice not found!', HttpStatusCode.NOT_FOUND)
 		}
 
-		const invoice = await findAndUpdateInvoice(
+		const user_id = res.locals.user._id
+		if (invoice.user_id !== user_id) {
+			throw new ApiError(
+				'You are not authorized to update this invoice!',
+				HttpStatusCode.UNAUTHORIZED
+			)
+		}
+
+		const updatedInvoice = await findAndUpdateInvoice(
 			{ _id: id },
 			{ ...req.body },
 			{ new: true }
 		)
 
 		// @ts-expect-error
-		const subtotal = calculate.subtotal(invoice)
+		const subtotal = calculate.subtotal(updatedInvoice)
 		// @ts-expect-error
-		const total = calculate.total(invoice)
+		const total = calculate.total(updatedInvoice)
 
 		return res.status(HttpStatusCode.OK).json({
 			success: true,
 			message: 'Invoice updated successfully!',
 			data: {
-				...invoice?.toJSON(),
+				...updatedInvoice?.toJSON(),
 				subtotal,
 				total,
 			},
@@ -157,24 +175,45 @@ export const updateInvoiceStatusHandler = async (
 	try {
 		const { id, status } = req.params
 
-		const invoiceExists = await findInvoiceById(id)
-		if (!invoiceExists) {
+		const invoice = await findInvoiceById(id)
+		if (!invoice) {
 			throw new ApiError('Invoice not found!', HttpStatusCode.NOT_FOUND)
+		}
+
+		const user_id = res.locals.user._id
+		if (invoice.user_id !== user_id) {
+			throw new ApiError(
+				'You are not authorized to update this invoice!',
+				HttpStatusCode.UNAUTHORIZED
+			)
 		}
 
 		if (!INVOICE_STATUS.includes(status)) {
 			throw new ApiError(
-				`Invalid status! Allowed status is: ${INVOICE_STATUS.join(', ')}`,
+				`Invalid status! Allowed status include: ${INVOICE_STATUS.join(', ')}`,
 				HttpStatusCode.BAD_REQUEST
 			)
 		}
 
-		await findAndUpdateInvoice({ _id: id }, { status }, { new: true })
+		const updatedInvoice = await findAndUpdateInvoice(
+			{ _id: id },
+			{ status },
+			{ new: true }
+		)
+
+		// @ts-expect-error
+		const subtotal = calculate.subtotal(updatedInvoice)
+		// @ts-expect-error
+		const total = calculate.total(updatedInvoice)
 
 		return res.status(HttpStatusCode.OK).json({
 			success: true,
 			message: 'Invoice status updated successfully!',
-			// data: invoice,
+			data: {
+				...updatedInvoice?.toJSON(),
+				subtotal,
+				total,
+			},
 		})
 	} catch (error) {
 		next(error)
@@ -189,9 +228,17 @@ export const deleteInvoiceHandler = async (
 	try {
 		const { id } = req.params
 
-		const invoiceExists = await findInvoiceById(id)
-		if (!invoiceExists) {
+		const invoice = await findInvoiceById(id)
+		if (!invoice) {
 			throw new ApiError('Invoice not found!', HttpStatusCode.NOT_FOUND)
+		}
+
+		const user_id = res.locals.user._id
+		if (invoice.user_id !== user_id) {
+			throw new ApiError(
+				'You are not authorized to delete this invoice!',
+				HttpStatusCode.UNAUTHORIZED
+			)
 		}
 
 		await deleteInvoice({ _id: id })
@@ -211,27 +258,35 @@ export const getInvoiceHandler = async (
 ) => {
 	try {
 		const { id } = req.params
-		const invoiceExists = await findInvoiceById(id)
 
-		if (!invoiceExists) {
+		const invoice = await findInvoiceById(id)
+		if (!invoice) {
 			throw new ApiError('Invoice not found!', HttpStatusCode.NOT_FOUND)
 		}
 
-		const invoice = await findInvoice(
+		const user_id = res.locals.user._id
+		if (invoice.user_id !== user_id) {
+			throw new ApiError(
+				'You are not authorized to get this invoice!',
+				HttpStatusCode.UNAUTHORIZED
+			)
+		}
+
+		const invoiceExists = await findInvoice(
 			{ _id: id },
 			{ populate: { path: 'client', select: 'name email' } }
 		)
 
 		// @ts-expect-error
-		const subtotal = calculate.subtotal(invoice)
+		const subtotal = calculate.subtotal(invoiceExists)
 		// @ts-expect-error
-		const total = calculate.total(invoice)
+		const total = calculate.total(invoiceExists)
 
 		return res.status(HttpStatusCode.OK).json({
 			success: true,
 			message: 'Invoice fetched successfully!',
 			data: {
-				...invoice?.toJSON(),
+				...invoiceExists?.toJSON(),
 				subtotal,
 				total,
 			},
@@ -241,6 +296,8 @@ export const getInvoiceHandler = async (
 	}
 }
 
+// TODO: this should automagically generate payment link based on invoice
+export const generatePaymentLinkHandler = () => {}
 export const invoicePaymentHandler = () => {}
 
 export const sendInvoiceViaMailHandler = async (
@@ -250,16 +307,26 @@ export const sendInvoiceViaMailHandler = async (
 ) => {
 	try {
 		const { id } = req.params
+
 		const invoice = await findInvoiceById(id)
 		if (!invoice) {
 			throw new ApiError('Invoice not found!', HttpStatusCode.NOT_FOUND)
 		}
 
+		const user_id = res.locals.user._id
+		if (invoice.user_id !== user_id) {
+			throw new ApiError('You are not authorized!', HttpStatusCode.UNAUTHORIZED)
+		}
+
 		// send mail
 		await sendMail({
 			to: invoice.client,
-
 			subject: `Invoice for ${invoice.project_name}`,
+		})
+
+		return res.status(HttpStatusCode.OK).json({
+			success: true,
+			message: 'Invoice sent successfully!',
 		})
 	} catch (error) {
 		next(error)
@@ -273,16 +340,26 @@ export const sendInvoiceReminderMailHandler = async (
 ) => {
 	try {
 		const { id } = req.params
+
 		const invoice = await findInvoiceById(id)
 		if (!invoice) {
 			throw new ApiError('Invoice not found!', HttpStatusCode.NOT_FOUND)
 		}
 
+		const user_id = res.locals.user._id
+		if (invoice.user_id !== user_id) {
+			throw new ApiError('You are not authorized!', HttpStatusCode.UNAUTHORIZED)
+		}
+
 		// send mail
 		await sendMail({
 			to: invoice.client,
-
 			subject: `Reminder: Invoice for ${invoice.project_name}`,
+		})
+
+		return res.status(HttpStatusCode.OK).json({
+			success: true,
+			message: 'Invoice reminder sent successfully!',
 		})
 	} catch (error) {
 		next(error)

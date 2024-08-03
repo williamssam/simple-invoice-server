@@ -46,6 +46,7 @@ export const createUserHandler = async (
 
 		const user = await createUser(req.body)
 		user.verify_code = customNano()
+		user.verify_code_expires = new Date(Date.now() + 10 * 60 * 1000) // 10 mins
 		// await sendMail({
 		// 	to: user.email,
 		// 	subject: 'Verify your email address',
@@ -55,7 +56,7 @@ export const createUserHandler = async (
 		await user.save()
 		return res.status(HttpStatusCode.CREATED).json({
 			success: true,
-			message: 'Registration successful!',
+			message: 'Registration successful! Verification code sent to your email.',
 			data: user,
 		})
 	} catch (error) {
@@ -93,6 +94,13 @@ export const verifyUserHandler = async (
 			)
 		}
 
+		if (user.verify_code_expires < new Date()) {
+			throw new ApiError(
+				'Verification code has expired!',
+				HttpStatusCode.BAD_REQUEST
+			)
+		}
+
 		await findAndUpdateUser(
 			{ _id: user._id },
 			{ is_verified: true, verify_code: '' }
@@ -108,6 +116,7 @@ export const verifyUserHandler = async (
 	}
 }
 
+// TODO: can this handle for both recover and verify?? maybe not
 export const resendVerificationCodeHandler = async (
 	req: Request<ResendVerificationCodeInput>,
 	res: Response,
@@ -345,6 +354,7 @@ export const forgotPasswordHandler = async (
 		}
 
 		user.recover_code = customNano()
+		user.recover_code_expires = new Date(Date.now() + 10 * 60 * 1000) // 10 mins
 		await user.save()
 
 		return res.status(HttpStatusCode.ACCEPTED).json({
@@ -380,8 +390,14 @@ export const resetPasswordHandler = async (
 			)
 		}
 
+			if (user.verify_code_expires < new Date()) {
+				throw new ApiError(
+					'Reset code has expired!',
+					HttpStatusCode.BAD_REQUEST
+				)
+			}
+
 		user.password = password
-		// await findAndUpdateUser({  }, { code: '' })
 		user.recover_code = ''
 		await user.save()
 

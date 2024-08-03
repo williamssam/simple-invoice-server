@@ -10,6 +10,7 @@ type InvoiceInput = Pick<
 	| 'issued_date'
 	| 'due_date'
 	| 'items'
+	| 'user_id'
 >
 
 export const createInvoice = (input: InvoiceInput) => {
@@ -43,13 +44,23 @@ type GetAllInvoiceParam = {
 	limit: number
 	skip: number
 	status: (typeof INVOICE_STATUS)[number]
+	user_id: string
 }
 
-export const getAllInvoice = ({ skip, limit, status }: GetAllInvoiceParam) => {
-	let filter = {}
+export const getAllInvoice = ({
+	skip,
+	limit,
+	status,
+	user_id,
+}: GetAllInvoiceParam) => {
+	let filter = { user_id: user_id }
 
 	if (status !== 'all') {
-		filter = { status: { $eq: status } }
+		filter = {
+			...filter,
+			// @ts-expect-error
+			status: { $eq: status },
+		}
 	}
 
 	// should be able search
