@@ -8,7 +8,7 @@ import { type INVOICE_STATUS, page_limit } from '../../utils/constant'
 import InvoiceModel from '../invoice/invoice.model'
 import ClientModel, { type ClientDocument } from './client.model'
 
-type ClientInput = Pick<ClientDocument, 'name' | 'email' | 'phone'>
+type ClientInput = Pick<ClientDocument, 'name' | 'email' | 'phone' | 'user_id'>
 
 export const createClient = (input: ClientInput) => {
 	return ClientModel.create(input)
@@ -41,13 +41,17 @@ export const deleteClient = (query: FilterQuery<ClientDocument>) => {
 type GetClientsParams = {
 	skip: number
 	search?: string
+	id: any
 }
-export const getAllClients = ({ skip, search }: GetClientsParams) => {
-	let filter = {}
+export const getAllClients = ({ skip, search, id }: GetClientsParams) => {
+	let filter = {
+		user_id: id,
+	}
 
 	if (search) {
 		filter = {
-			$text: { $search: search },
+			...filter,
+			// $text: { $search: search },
 		}
 	}
 

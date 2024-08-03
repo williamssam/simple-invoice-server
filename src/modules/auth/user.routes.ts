@@ -8,9 +8,9 @@ import {
 	createUserHandler,
 	deleteUserHandler,
 	forgotPasswordHandler,
+	generateRefreshTokenHandler,
 	getCurrentUserHandler,
 	loginHandler,
-	refreshTokenHandler,
 	resendVerificationCodeHandler,
 	resetPasswordHandler,
 	updateUserHandler,
@@ -21,6 +21,7 @@ import {
 	createUserSchema,
 	deleteUserSchema,
 	forgotPasswordSchema,
+	generateAccessTokenSchema,
 	loginUserSchema,
 	resendVerificationCodeSchema,
 	resetPasswordSchema,
@@ -34,17 +35,17 @@ export default (router: Router) => {
 	 */
 	router.post(
 		`${config.api_url_prefix}/login`,
-		[deserializeUser, requireUser, validateResource(loginUserSchema)],
+		[validateResource(loginUserSchema)],
 		loginHandler
 	)
 
 	/**
 	 * Refresh token endpoint
 	 */
-	router.get(
+	router.post(
 		`${config.api_url_prefix}/refresh-token`,
-		[deserializeUser, requireUser],
-		refreshTokenHandler
+		[validateResource(generateAccessTokenSchema)],
+		generateRefreshTokenHandler
 	)
 
 	/**

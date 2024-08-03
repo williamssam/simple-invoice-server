@@ -1,4 +1,5 @@
 import mongoose from 'mongoose'
+import type { UserDocument } from '../auth/user.model'
 import type { InvoiceDocument } from '../invoice/invoice.model'
 
 export interface ClientDocument extends mongoose.Document {
@@ -7,6 +8,7 @@ export interface ClientDocument extends mongoose.Document {
 		email: string
 		phone: string
 		invoices: InvoiceDocument['id'][]
+		user_id: UserDocument['id']
 		created_at: Date
 		updated_at: Date
 	}
@@ -16,6 +18,10 @@ const clientModel = new mongoose.Schema(
 		name: {
 			type: String,
 			required: true,
+		},
+		user_id: {
+			type: mongoose.Schema.Types.ObjectId,
+			ref: 'User',
 		},
 		email: {
 			type: String,
@@ -37,6 +43,16 @@ const clientModel = new mongoose.Schema(
 		timestamps: {
 			createdAt: 'created_at',
 			updatedAt: 'updated_at',
+		},
+		toJSON: {
+			virtuals: true,
+			transform(doc, ret) {
+				ret.invoices = undefined
+				ret.user_id = undefined
+				ret._id = undefined
+
+				return ret
+			},
 		},
 	}
 )

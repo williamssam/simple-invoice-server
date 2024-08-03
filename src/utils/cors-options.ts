@@ -3,6 +3,9 @@ import { HttpStatusCode } from '../types'
 
 const whitelist = ['http://localhost:5173']
 
+/**
+ * Defines the CORS options for handling requests based on the origin.
+ */
 export const corsOptions = (
 	origin: string | undefined,
 	callback: (err: Error | null, allow?: boolean) => void

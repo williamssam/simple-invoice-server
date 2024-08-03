@@ -30,14 +30,12 @@ app.use(errorHandler)
 // mongoose default to remove both "_id" and version number from response
 mongoose.set('toJSON', {
 	virtuals: true,
-	transform: (doc, converted) => {
-		if (!converted._id) return
+	versionKey: false,
+	transform: (doc, ret) => {
+		if (!ret._id) return
 
-		converted.id = converted._id.toHexString()
 		// biome-ignore lint/performance/noDelete: <explanation>
-		delete converted._id
-		// biome-ignore lint/performance/noDelete: <explanation>
-		delete converted.__v
+		delete ret._id
 	},
 })
 

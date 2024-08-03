@@ -3,6 +3,7 @@ import { ApiError } from '../../exceptions/api-error'
 import { HttpStatusCode } from '../../types'
 import { page_limit } from '../../utils/constant'
 import { calculate } from '../../utils/money'
+import { findUserById } from '../auth/user.service'
 import type {
 	CreateClientInput,
 	DeleteClientInput,
@@ -19,7 +20,6 @@ import {
 	findClientById,
 	getAllClientInvoice,
 	getAllClients,
-	totalClient,
 	totalClientInvoice,
 } from './client.service'
 
@@ -29,9 +29,16 @@ export const createClientHandler = async (
 	next: NextFunction
 ) => {
 	try {
+		const id = res.locals.user._id
 		const { email, phone } = req.body
 
-		// TODO: check to see if this check for both email and phone
+		// TODO: check to see if client with email or phone already exists with the current logged in user
+		const user = await findUserById(id)
+		if (!user) {
+			throw new ApiError('User not found!', HttpStatusCode.NOT_FOUND)
+		}
+
+
 		const clientWithEmailExists = await findClient({ email })
 		if (clientWithEmailExists) {
 			throw new ApiError(
@@ -40,7 +47,7 @@ export const createClientHandler = async (
 			)
 		}
 
-		const clientWithPhoneExists = await findClient({ phone })
+		const clientWithPhoneExists = await findClient({ phone, user_id: id })
 		if (clientWithPhoneExists) {
 			throw new ApiError(
 				'Client with phone already exists!',
@@ -48,7 +55,12 @@ export const createClientHandler = async (
 			)
 		}
 
-		const client = await createClient(req.body)
+		const client = await createClient({
+			...req.body,
+			user_id: id,
+		})
+
+		await client.save()
 
 		return res.status(HttpStatusCode.CREATED).json({
 			success: true,
@@ -67,13 +79,29 @@ export const updateClientHandler = async (
 ) => {
 	try {
 		const { id } = req.params
+		const user_id = res.locals.user._id
 
-		const clientExists = await findClientById(id)
-		if (!clientExists) {
+		const client = await findClientById(id)
+		if (!client) {
 			throw new ApiError('Client not found!', HttpStatusCode.NOT_FOUND)
 		}
 
-		const client = await findAndUpdateClient(
+		const user = await findUserById(user_id)
+		if (!user) {
+			throw new ApiError(
+				'No active session, please login',
+				HttpStatusCode.NOT_FOUND
+			)
+		}
+
+		if (user._id !== client.user_id) {
+			throw new ApiError(
+				'You are not authorized to update this client!',
+				HttpStatusCode.UNAUTHORIZED
+			)
+		}
+
+		const updatedClient = await findAndUpdateClient(
 			{ _id: id },
 			{ ...req.body },
 			{ new: true }
@@ -81,7 +109,7 @@ export const updateClientHandler = async (
 		return res.status(HttpStatusCode.OK).json({
 			success: true,
 			message: 'Client updated successfully',
-			data: client,
+			data: updatedClient,
 		})
 	} catch (error) {
 		next(error)
@@ -95,10 +123,26 @@ export const deleteClientHandler = async (
 ) => {
 	try {
 		const { id } = req.params
+		const user_id = res.locals.user._id
 
-		const clientExists = await findClientById(id)
-		if (!clientExists) {
+		const client = await findClientById(id)
+		if (!client) {
 			throw new ApiError('Client not found!', HttpStatusCode.NOT_FOUND)
+		}
+
+		const user = await findUserById(user_id)
+		if (!user) {
+			throw new ApiError(
+				'No active session, please login',
+				HttpStatusCode.NOT_FOUND
+			)
+		}
+
+		if (user._id !== client.user_id) {
+			throw new ApiError(
+				'You are not authorized to delete this client!',
+				HttpStatusCode.UNAUTHORIZED
+			)
 		}
 
 		await deleteClient({ _id: id })
@@ -118,20 +162,40 @@ export const getClientHandler = async (
 ) => {
 	try {
 		const { id } = req.params
-		const clientExists = await findClientById(id)
+		const user_id = res.locals.user._id
 
-		if (!clientExists) {
+		const client = await findClientById(id)
+		if (!client) {
 			throw new ApiError('Client not found!', HttpStatusCode.NOT_FOUND)
 		}
 
-		const client = await findClient({ _id: id }, { invoices: 0 }, { new: true })
+		const user = await findUserById(user_id)
+		if (!user) {
+			throw new ApiError(
+				'No active session, please login',
+				HttpStatusCode.NOT_FOUND
+			)
+		}
+
+		if (user._id !== client.user_id) {
+			throw new ApiError(
+				'You are not authorized to view this client!',
+				HttpStatusCode.UNAUTHORIZED
+			)
+		}
+
+		const clients = await findClient(
+			{ _id: id },
+			{ invoices: 0 },
+			{ new: true }
+		)
 
 		// TODO: remove "invoices" from the response
 
 		return res.status(HttpStatusCode.OK).json({
 			success: true,
 			message: 'Client fetched successfully',
-			data: client,
+			data: clients,
 		})
 	} catch (error) {
 		next(error)
@@ -144,14 +208,24 @@ export const getAllClientsHandler = async (
 	next: NextFunction
 ) => {
 	try {
+		const user_id = res.locals.user._id
 		const { page: requestedPage, search } = req.query
+
+		const user = await findUserById(user_id)
+		if (!user) {
+			throw new ApiError(
+				'No active session, please login',
+				HttpStatusCode.NOT_FOUND
+			)
+		}
 
 		const page = Number(requestedPage) || 1
 		const limit = page_limit
 		const skip = (page - 1) * limit
 
-		const clients = await getAllClients({ skip, search })
-		const total = await totalClient()
+		const data = getAllClients({ skip, search, id: user_id })
+		const clients = await data
+		const total = await data.countDocuments()
 
 		return res.status(HttpStatusCode.OK).json({
 			success: true,

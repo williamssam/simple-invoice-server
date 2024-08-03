@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express'
 import { ApiError } from '../exceptions/api-error'
 import { HttpStatusCode } from '../types'
-import { verifyJWT } from '../utils/jwt'
+import { verifyAccessJWT } from '../utils/jwt'
 
 /**
  * Deserializes the user from the request headers and stores it in the response locals.
@@ -15,7 +15,7 @@ export const deserializeUser = async (
 		const has_header = req.headers.authorization
 		if (!has_header?.startsWith('Bearer ')) {
 			throw new ApiError(
-				'Invalid access token, unknown authentication scheme',
+				'No access token found, make sure to add Bearer in your request header',
 				HttpStatusCode.UNAUTHORIZED
 			)
 		}
@@ -25,7 +25,7 @@ export const deserializeUser = async (
 			throw new ApiError('Access token not found!', HttpStatusCode.UNAUTHORIZED)
 		}
 
-		const payload = await verifyJWT(access_token)
+		const payload = await verifyAccessJWT(access_token)
 		if (payload?.decoded) {
 			res.locals.user = payload?.decoded
 			return next()

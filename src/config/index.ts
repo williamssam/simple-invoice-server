@@ -8,7 +8,7 @@ export const config = {
 	smtp_pass: process.env.SMTP_PASSWORD as string,
 	access_token: {
 		key: process.env.ACCESS_TOKEN_KEY as string,
-		expires_in: '15m',
+		expires_in: '5m',
 	},
 	refresh_token: {
 		key: process.env.REFRESH_TOKEN_KEY as string,

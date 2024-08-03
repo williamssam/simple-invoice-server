@@ -169,11 +169,7 @@ export const updateInvoiceStatusHandler = async (
 			)
 		}
 
-		const invoice = await findAndUpdateInvoice(
-			{ _id: id },
-			{ status },
-			{ new: true }
-		)
+		await findAndUpdateInvoice({ _id: id }, { status }, { new: true })
 
 		return res.status(HttpStatusCode.OK).json({
 			success: true,

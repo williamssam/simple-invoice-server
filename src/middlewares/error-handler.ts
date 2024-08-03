@@ -13,7 +13,6 @@ const errorHandler = (
 	next: NextFunction
 ) => {
 	if (!(err instanceof CustomError)) {
-		// TODO: this does not make sense small, how do we know if its throwing an internal server error
 		return res.status(HttpStatusCode.INTERNAL_SERVER).json({
 			message: 'Internal Server error. Something went wrong',
 			success: false,

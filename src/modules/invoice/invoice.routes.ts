@@ -1,5 +1,7 @@
 import type { Router } from 'express'
 import { config } from '../../config'
+import { deserializeUser } from '../../middlewares/deserialize-user'
+import { requireUser } from '../../middlewares/require-user'
 import { validateResource } from '../../middlewares/validate-resource'
 import {
 	createInvoiceHandler,
@@ -24,7 +26,7 @@ export default (router: Router) => {
 	 */
 	router.get(
 		`${config.api_url_prefix}/invoices`,
-		[validateResource(getAllInvoicesSchema)],
+		[deserializeUser, requireUser, validateResource(getAllInvoicesSchema)],
 		getAllInvoiceHandler
 	)
 
@@ -34,7 +36,7 @@ export default (router: Router) => {
 	 */
 	router.get(
 		`${config.api_url_prefix}/invoice/:id`,
-		[validateResource(getInvoiceSchema)],
+		[deserializeUser, requireUser, validateResource(getInvoiceSchema)],
 		getInvoiceHandler
 	)
 
@@ -43,7 +45,7 @@ export default (router: Router) => {
 	 */
 	router.post(
 		`${config.api_url_prefix}/invoice`,
-		[validateResource(createInvoiceSchema)],
+		[deserializeUser, requireUser, validateResource(createInvoiceSchema)],
 		createInvoiceHandler
 	)
 
@@ -53,7 +55,7 @@ export default (router: Router) => {
 	 */
 	router.put(
 		`${config.api_url_prefix}/invoice/:id`,
-		[validateResource(updateInvoiceSchema)],
+		[deserializeUser, requireUser, validateResource(updateInvoiceSchema)],
 		updateInvoiceHandler
 	)
 
@@ -63,7 +65,7 @@ export default (router: Router) => {
 	 */
 	router.patch(
 		`${config.api_url_prefix}/invoice/:id/:status`,
-		[validateResource(updateInvoiceStatusSchema)],
+		[deserializeUser, requireUser, validateResource(updateInvoiceStatusSchema)],
 		updateInvoiceStatusHandler
 	)
 
@@ -73,7 +75,7 @@ export default (router: Router) => {
 	 */
 	router.delete(
 		`${config.api_url_prefix}/invoice/:id`,
-		[validateResource(deleteInvoiceSchema)],
+		[deserializeUser, requireUser, validateResource(deleteInvoiceSchema)],
 		deleteInvoiceHandler
 	)
 }

@@ -20,7 +20,10 @@ const payload = {
 			})
 			.min(11, 'Phone number should be 11 digits long')
 			.max(11, 'Phone number should not be 11 digits long')
-			.trim(),
+			.trim()
+			.transform(val =>
+				val.startsWith('0') ? val.replace('0', '234') : `234${val}`
+			),
 		password: z
 			.string({
 				required_error: 'Password is required',
@@ -61,8 +64,8 @@ const verifyUserSchema = z.object({
 	body: z.object({
 		code: z
 			.string({ required_error: 'Verification code is required' })
-			.min(4, { message: 'Verification code cannot be less than 4 digits' })
-			.max(4, { message: 'Verification code cannot be more than 4 digits' }),
+			.min(5, { message: 'Verification code cannot be less than 4 digits' })
+			.max(5, { message: 'Verification code cannot be more than 4 digits' }),
 		email: z
 			.string({
 				required_error: 'Email is required',
@@ -103,6 +106,8 @@ const resetPasswordSchema = z.object({
 			.string({
 				required_error: 'Password reset code is required',
 			})
+			.min(5, { message: 'Verification code cannot be less than 4 digits' })
+			.max(5, { message: 'Verification code cannot be more than 4 digits' })
 			.trim(),
 		email: z
 			.string({
@@ -140,6 +145,15 @@ const forgotPasswordSchema = z.object({
 			.trim(),
 	}),
 })
+const generateAccessTokenSchema = z.object({
+	body: z.object({
+		refresh_token: z
+			.string({
+				required_error: 'Please provide a refresh token',
+			})
+			.trim(),
+	}),
+})
 
 // TYPES
 type CreateUserInput = z.infer<typeof createUserSchema>['body']
@@ -154,12 +168,16 @@ type LoginUserInput = z.infer<typeof loginUserSchema>['body']
 type ResetPasswordInput = z.infer<typeof resetPasswordSchema>['body']
 type ChangePasswordInput = z.infer<typeof changePasswordSchema>
 type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>['body']
+type GenerateAccessTokenInput = z.infer<
+	typeof generateAccessTokenSchema
+>['body']
 
 export {
 	changePasswordSchema,
 	createUserSchema,
 	deleteUserSchema,
 	forgotPasswordSchema,
+	generateAccessTokenSchema,
 	getUserSchema,
 	loginUserSchema,
 	resendVerificationCodeSchema,
@@ -170,6 +188,7 @@ export {
 	type CreateUserInput,
 	type DeleteUserInput,
 	type ForgotPasswordInput,
+	type GenerateAccessTokenInput,
 	type GetUserInput,
 	type LoginUserInput,
 	type ResendVerificationCodeInput,

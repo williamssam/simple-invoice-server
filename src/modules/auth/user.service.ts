@@ -22,7 +22,7 @@ export const findUserById = (id: string) => {
 export const findUser = (
 	query: FilterQuery<UserDocument>,
 	projection: ProjectionType<UserDocument> = {},
-	options: QueryOptions = { lean: true }
+	options: QueryOptions = {}
 ) => {
 	return UserModel.findOne(query, projection, options)
 }

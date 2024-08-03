@@ -4,20 +4,20 @@ import mongoose from 'mongoose'
 import { config } from '../../config'
 
 export interface UserDocument extends mongoose.Document {
-	name: string
-	email: string
-	phone: string
-	is_verified: boolean
-	password_reset_code?: string
-	verification_code: string
-	created_at: Date
-	updated_at: Date
-	token: string
-	password: string
-	comparePassword: (password: string) => Promise<boolean>
-	generateAccessToken: () => Promise<string>
-	generateRefreshToken: () => Promise<string>
-}
+		name: string
+		email: string
+		phone: string
+		is_verified: boolean
+		verify_code: string
+		recover_code: string
+		created_at: Date
+		updated_at: Date
+		token: string
+		password: string
+		comparePassword: (password: string) => Promise<boolean>
+		generateAccessToken: () => Promise<string>
+		generateRefreshToken: () => Promise<string>
+	}
 
 const userSchema = new mongoose.Schema(
 	{
@@ -38,9 +38,9 @@ const userSchema = new mongoose.Schema(
 			type: Boolean,
 			default: false,
 		},
-		verification_code: String,
-		password_reset_code: String,
-		//  This is the access token
+		verify_code: String,
+		recover_code: String,
+		//  This is the refresh token
 		token: String,
 		password: {
 			type: String,
@@ -57,9 +57,15 @@ const userSchema = new mongoose.Schema(
 				// biome-ignore lint/performance/noDelete: <explanation>
 				delete ret.token
 				// biome-ignore lint/performance/noDelete: <explanation>
+				delete ret.__v
+				// biome-ignore lint/performance/noDelete: <explanation>
+				delete ret._id
+				// biome-ignore lint/performance/noDelete: <explanation>
 				delete ret.password
 				// biome-ignore lint/performance/noDelete: <explanation>
-				delete ret.verification_code
+				delete ret.verify_code
+				// biome-ignore lint/performance/noDelete: <explanation>
+				delete ret.recover_code
 
 				return ret
 			},
@@ -91,8 +97,8 @@ userSchema.methods.comparePassword = async function (password: string) {
 }
 
 userSchema.methods.generateAccessToken = async function () {
-	// biome-ignore lint/complexity/noUselessThisAlias: <explanation>
-	const user = this
+	const user = this.toObject()
+
 	const key = Buffer.from(config.access_token.key, 'base64').toString('ascii')
 	return jwt.sign(user, key, {
 		expiresIn: config.access_token.expires_in,

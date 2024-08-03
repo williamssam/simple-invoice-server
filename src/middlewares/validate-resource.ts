@@ -2,6 +2,9 @@ import type { NextFunction, Request, Response } from 'express'
 import { type AnyZodObject, ZodError } from 'zod'
 import { HttpStatusCode } from '../types'
 
+/**
+ * Validates the resource using the provided schema.
+ */
 export const validateResource =
 	(schema: AnyZodObject) =>
 	(req: Request, res: Response, next: NextFunction) => {
