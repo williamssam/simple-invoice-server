@@ -264,15 +264,7 @@ export const getClientInvoicesHandler = async (
 	try {
 		const { id } = req.params
 		const { page: requestedPage, status: requestedStatus } = req.query
-			const user_id = res.locals.user._id
-
-		const user = await findUserById(user_id)
-		if (!user) {
-			throw new ApiError(
-				'No active session, please login',
-				HttpStatusCode.NOT_FOUND
-			)
-		}
+		const user_id = res.locals.user._id
 
 		const client = await findClientById(id)
 		if (!client) {
@@ -283,14 +275,16 @@ export const getClientInvoicesHandler = async (
 		const status = requestedStatus ?? 'all'
 		const limit = 15
 		const skip = (page - 1) * limit
-		const total = await totalClientInvoice(id)
+
 
 		const data = await getAllClientInvoice({
 			client_id: id,
-			user_id: user.id,
+			user_id: user_id,
 			skip,
 			status,
 		})
+		const total = await totalClientInvoice(id)
+
 		const client_invoices = data.map(invoice => ({
 			...invoice.toJSON(),
 			total: calculate.total(invoice),

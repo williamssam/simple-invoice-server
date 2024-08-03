@@ -4,7 +4,9 @@ import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
 import mongoose from 'mongoose'
+import cron from 'node-cron'
 import { config } from './config'
+import { sendReminderEmail } from './jobs/send-reminder'
 import errorHandler from './middlewares/error-handler'
 import routes from './routes'
 import { connectToDB } from './utils/connect-db'
@@ -44,3 +46,6 @@ app.listen(config.port, async () => {
 	await connectToDB()
 	console.log(`Server started on port ${config.port}`)
 })
+
+// Run this job every day at midnight
+cron.schedule('0 0 */1 * *', sendReminderEmail)

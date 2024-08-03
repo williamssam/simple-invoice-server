@@ -75,14 +75,16 @@ type ClientInvoiceParam = {
 }
 
 export const getAllClientInvoice = (params: ClientInvoiceParam) => {
-	const filter = {
-		user_id: params.user_id,
-		client_id: params.client_id,
+	let filter = {
+		$and: [{ user_id: params.user_id }, { client: params.client_id }],
 	}
 
 	if (params.status !== 'all') {
-		// @ts-expect-error property status does not exist on filter
-		filter.status = { $eq: params.status }
+		filter = {
+			...filter,
+			// @ts-expect-error property $eq does not exist on filter
+			status: { $eq: params.status },
+		}
 	}
 
 	// should be able search
